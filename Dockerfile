@@ -22,7 +22,7 @@ RUN if [ "$ENVIRONMENT" = "development" ]; then \
     fi
 
 # 构建前端资源
-RUN npm run build
+RUN npm run build:prod
 
 # 阶段 2：使用 nginx 运行静态站点
 FROM nginx:alpine

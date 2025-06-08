@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main  # 当推送到 main 分支时触发
+env:
+  DOCKERHUB_USERNAME: bbxydcr22
+  IMAGE_NAME: risk-admin
 
 jobs:
   build-and-push:
@@ -31,6 +34,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/risk-admin/risk-admin-ui:latest
+          tags: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:risk-admin-ui-latest
           build-args: |
             ENVIRONMENT=production

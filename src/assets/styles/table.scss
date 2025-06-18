@@ -1,0 +1,16 @@
+
+
+.custom-table .el-table__header-wrapper th {
+  font-size: 16px; /* 表头字体 */
+  font-weight: 600;
+}
+
+.custom-table .cell {
+  padding: 8px 12px; /* 单元格内边距 */
+  line-height: 1.6;
+}
+
+.custom-table .el-button {
+  font-size: 14px;
+  padding: 4px 10px;
+}

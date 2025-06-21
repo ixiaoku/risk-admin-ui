@@ -1,26 +1,27 @@
 import request from '@/utils/request'
 
 // 查询事件列表
-export function listIncident(query) {
+export function listIncident(data) {
     return request({
-        url: '/system/incident/list',
-        method: 'get',
-        params: query
+        url: '/incident/list',
+        method: 'post',
+        data: data
     })
 }
 
 // 查询事件详情
 export function getIncident(id) {
     return request({
-        url: `/system/incident/${id}`,
-        method: 'get'
+        url: '/incident/detail',
+        method: 'get',
+        params: { id: id }
     })
 }
 
 // 新增事件
 export function addIncident(data) {
     return request({
-        url: '/system/incident/insert',
+        url: '/incident/insert',
         method: 'post',
         data: data
     })
@@ -29,8 +30,8 @@ export function addIncident(data) {
 // 修改事件
 export function updateIncident(data) {
     return request({
-        url: '/system/incident',
-        method: 'put',
+        url: '/incident',
+        method: 'post',
         data: data
     })
 }
@@ -38,7 +39,7 @@ export function updateIncident(data) {
 // 删除事件
 export function delIncident(id) {
     return request({
-        url: `/system/incident/${id}`,
+        url: `/incident/${id}`,
         method: 'delete'
     })
 }
@@ -46,7 +47,7 @@ export function delIncident(id) {
 // 解析请求数据
 export function parsePayload(data) {
     return request({
-        url: '/system/incident/parse',
+        url: '/incident/parse',
         method: 'post',
         data: data
     })

@@ -157,7 +157,7 @@
               />
               <el-button
                   type="success"
-                  @click="parsePayload"
+                  @click="handleParsePayload"
                   style="margin-top: 10px"
               >解析指标</el-button>
             </el-form-item>
@@ -219,7 +219,7 @@
 </template>
 
 <script setup name="IncidentManage">
-import { addIncident, delIncident, getIncident, listIncident, parsePayload, updateIncident } from "@/api/system/incident"
+import { addIncident, delIncident, getIncident, listIncident, parsePayload, updateIncident } from "@/api/risk/incident.js"
 import { getCurrentInstance, ref, reactive, toRefs, computed } from "vue"
 
 // 获取当前实例
@@ -286,12 +286,34 @@ const formattedRequestPayload = computed({
 function getList() {
   loading.value = true
   listIncident(queryParams.value).then(response => {
-    incidentList.value = response.rows || []
-    total.value = Number(response.total) || 0
+    incidentList.value = response.data.list || []
+    total.value = Number(response.data.total) || 0
     loading.value = false
   }).catch(() => {
     loading.value = false
   })
+}
+
+async function handleParsePayload() {
+  try {
+    isPayloadDisabled.value = true
+    const response = await parsePayload({
+      requestPayload: form.value.requestPayload,
+      incidentCode: form.value.incidentCode
+    })
+    metrics.value = response.data.map(item => ({
+      metricCode: item.metricCode || "",
+      metricName: item.metricName || "",
+      metricType: String(item.metricType || ""),
+      sampleValue: item.sampleValue || "",
+      metricDesc: item.metricDesc || ""
+    }))
+    proxy.$modal.msgSuccess("解析成功")
+  } catch (error) {
+    proxy.$modal.msgError("解析失败")
+  } finally {
+    isPayloadDisabled.value = false
+  }
 }
 
 // 搜索
@@ -369,28 +391,6 @@ function handleDelete(row) {
     proxy.$modal.msgSuccess("删除成功")
     getList()
   }).catch(() => {})
-}
-
-// 解析指标
-async function parsePayload() {
-  try {
-    isPayloadDisabled.value = true
-    const response = await parsePayload({
-      requestPayload: form.value.requestPayload,
-      incidentCode: form.value.incidentCode
-    })
-    metrics.value = response.map(item => ({
-      metricCode: item.metricCode || "",
-      metricName: item.metricName || "",
-      metricType: String(item.metricType || ""),
-      sampleValue: item.sampleValue || "",
-      metricDesc: item.metricDesc || ""
-    }))
-    proxy.$modal.msgSuccess("解析成功")
-  } catch (error) {
-    proxy.$modal.msgError("解析失败")
-    isPayloadDisabled.value = false
-  }
 }
 
 // 提交表单

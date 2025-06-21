@@ -311,7 +311,8 @@
 </template>
 
 <script setup name="EngineResult">
-import { listEngineResult, getDashboard, getSnapshot, replayIncident, getDictOptionsByDb, getDictOptions } from "@/api/risk/result"
+import { listEngineResult, getDashboard, getSnapshot, replayIncident } from "@/api/risk/result"
+import { getDictOptions, getDictOptionsByDb } from "@/api/risk/dictionary"
 import { getCurrentInstance, ref, reactive, toRefs } from "vue"
 
 // 获取当前实例

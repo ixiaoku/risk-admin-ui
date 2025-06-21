@@ -23,7 +23,7 @@
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 240px">
           <el-option
-              v-for="dict in incident_status"
+              v-for="dict in incidentStatusOptions"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -65,19 +65,19 @@
       <el-table-column prop="incidentName" label="事件名称" width="140" :show-overflow-tooltip="true"></el-table-column>
       <el-table-column prop="status" label="状态" width="80" align="center">
         <template #default="scope">
-          <dict-tag :options="incident_status" :value="scope.row.status" />
+          <dict-tag :options="incidentStatusOptions" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column prop="responsiblePerson" label="负责人" width="100"></el-table-column>
       <el-table-column prop="operator" label="操作人" width="100"></el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="160">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ scope.row.createTime }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="updateTime" label="更新时间" width="160">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.updateTime) }}</span>
+          <span>{{ scope.row.updateTime }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
@@ -127,7 +127,7 @@
             <el-form-item label="状态" prop="status">
               <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%">
                 <el-option
-                    v-for="dict in incident_status"
+                    v-for="dict in incidentStatusOptions"
                     :key="dict.value"
                     :label="dict.label"
                     :value="dict.value"
@@ -177,9 +177,9 @@
                 </el-table-column>
                 <el-table-column prop="metricType" label="指标类型" width="120">
                   <template #default="scope">
-                    <el-select v-model="scope.row.metricType" style="width: 100%">
+                    <el-select v-model.number="scope.row.metricType" style="width: 100%">
                       <el-option
-                          v-for="dict in metric_type"
+                          v-for="dict in metricTypeOptions"
                           :key="dict.value"
                           :label="dict.label"
                           :value="dict.value"
@@ -220,13 +220,11 @@
 
 <script setup name="IncidentManage">
 import { addIncident, delIncident, getIncident, listIncident, parsePayload, updateIncident } from "@/api/risk/incident.js"
+import { getDictOptions } from "@/api/risk/dictionary"
 import { getCurrentInstance, ref, reactive, toRefs, computed } from "vue"
 
 // 获取当前实例
 const { proxy } = getCurrentInstance()
-// 加载字典数据
-const { incident_status, metric_type } = proxy.useDict("incident_status", "metric_type")
-
 // 响应式数据
 const incidentList = ref([]) // 事件列表
 const open = ref(false) // 对话框显示
@@ -236,6 +234,8 @@ const title = ref("") // 对话框标题
 const total = ref(0) // 总记录数
 const isPayloadDisabled = ref(false) // 请求数据输入框禁用
 const metrics = ref([]) // 解析的指标列表
+const incidentStatusOptions = ref([]) // 事件状态字典
+const metricTypeOptions = ref([]) // 指标类型字典
 
 const data = reactive({
   queryParams: {
@@ -249,7 +249,7 @@ const data = reactive({
     id: undefined,
     incidentCode: undefined,
     incidentName: undefined,
-    status: "0",
+    status: undefined,
     responsiblePerson: undefined,
     operator: undefined,
     requestPayload: undefined,
@@ -262,10 +262,18 @@ const data = reactive({
     status: [{ required: true, message: "状态不能为空", trigger: "change" }],
     responsiblePerson: [{ required: true, message: "负责人不能为空", trigger: "blur" }],
     requestPayload: [{ required: true, message: "请求数据不能为空", trigger: "blur" }]
-  } // 表单验证规则
+  }, // 表单验证规则
+  incidentStatusOptions: [],
+  metricTypeOptions: [],
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+// 初始化
+onMounted(() => {
+  fetchOptions()
+  getList()
+})
 
 // 格式化请求数据
 const formattedRequestPayload = computed({
@@ -281,6 +289,20 @@ const formattedRequestPayload = computed({
     form.value.requestPayload = value
   }
 })
+
+// 获取字典数据
+async function fetchOptions() {
+  try {
+    const dictOptions = {
+      dictKeyList: ["incidentStatus", "metricType"]
+    }
+    const result = await getDictOptions(dictOptions)
+    incidentStatusOptions.value = result.data.incidentStatus || []
+    metricTypeOptions.value = result.data.metricType || []
+  } catch (error) {
+    proxy.$modal.msgError("加载字典失败")
+  }
+}
 
 // 查询事件列表
 function getList() {
@@ -304,7 +326,7 @@ async function handleParsePayload() {
     metrics.value = response.data.map(item => ({
       metricCode: item.metricCode || "",
       metricName: item.metricName || "",
-      metricType: String(item.metricType || ""),
+      metricType: item.metricType,
       sampleValue: item.sampleValue || "",
       metricDesc: item.metricDesc || ""
     }))
@@ -343,7 +365,7 @@ function reset() {
     id: undefined,
     incidentCode: undefined,
     incidentName: undefined,
-    status: "0",
+    status: undefined,
     responsiblePerson: undefined,
     operator: undefined,
     requestPayload: undefined,
@@ -374,7 +396,7 @@ function handleUpdate(row) {
   getIncident(row.id).then(response => {
     form.value = {
       ...response.data,
-      status: String(response.data.status), // 确保字典类型匹配
+      status: response.data.status,
       metrics: response.data.metrics || []
     }
     metrics.value = form.value.metrics
@@ -417,8 +439,6 @@ function submitForm() {
   })
 }
 
-// 初始化
-getList()
 </script>
 
 <style scoped>

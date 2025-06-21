@@ -30,9 +30,9 @@
         >
           <el-option
               v-for="item in incidentOptions"
-              :key="item.code"
-              :label="item.msg"
-              :value="item.code"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
           />
         </el-select>
       </el-form-item>
@@ -46,9 +46,9 @@
         >
           <el-option
               v-for="item in ruleOptions"
-              :key="item.code"
-              :label="item.msg"
-              :value="item.code"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
           />
         </el-select>
       </el-form-item>
@@ -113,7 +113,7 @@
       <el-table-column prop="incidentName" label="事件名称" width="120" :show-overflow-tooltip="true" />
       <el-table-column prop="decisionResult" label="风控结果" width="80" align="center">
         <template #default="scope">
-          <dict-tag :options="decision_result" :value="scope.row.decisionResult" />
+          <dict-tag :options="decisionResultOptions" :value="scope.row.decisionResult" />
         </template>
       </el-table-column>
       <el-table-column label="基本要素" width="80" align="center">
@@ -156,7 +156,7 @@
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="160">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ scope.row.createTime }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" align="center" class-name="small-padding fixed-width">
@@ -210,10 +210,10 @@
         <el-descriptions-item label="规则编码">{{ currentRule.ruleCode }}</el-descriptions-item>
         <el-descriptions-item label="规则分数">{{ currentRule.ruleScore }}</el-descriptions-item>
         <el-descriptions-item label="规则状态">
-          <dict-tag :options="rule_status" :value="currentRule.ruleStatus" />
+          <dict-tag :options="ruleStatusOptions" :value="currentRule.ruleStatus" />
         </el-descriptions-item>
         <el-descriptions-item label="规则标签">
-          <dict-tag :options="rule_label" :value="currentRule.ruleLabel" />
+          <dict-tag :options="ruleLabelOptions" :value="currentRule.ruleLabel" />
         </el-descriptions-item>
         <el-descriptions-item label="规则处置">{{ currentRule.penaltyAction }}</el-descriptions-item>
       </el-descriptions>
@@ -230,7 +230,7 @@
         <el-table-column prop="ruleScore" label="规则得分" width="100" />
         <el-table-column prop="ruleStatus" label="规则状态" width="100">
           <template #default="scope">
-            <dict-tag :options="rule_status" :value="scope.row.ruleStatus" />
+            <dict-tag :options="ruleStatusOptions" :value="scope.row.ruleStatus" />
           </template>
         </el-table-column>
         <el-table-column prop="ruleVersion" label="规则版本" :show-overflow-tooltip="true" />
@@ -311,13 +311,11 @@
 </template>
 
 <script setup name="EngineResult">
-import { listEngineResult, getDashboard, getSnapshot, replayIncident, getDictOptions } from "@/api/system/engine/result"
+import { listEngineResult, getDashboard, getSnapshot, replayIncident, getDictOptionsByDb, getDictOptions } from "@/api/risk/result"
 import { getCurrentInstance, ref, reactive, toRefs } from "vue"
 
 // 获取当前实例
 const { proxy } = getCurrentInstance()
-// 加载字典数据
-const { decision_result, rule_status, rule_label } = proxy.useDict("decision_result", "rule_status", "rule_label")
 
 // 响应式数据
 const engineList = ref([]) // 风控结果列表
@@ -331,6 +329,11 @@ const snapshotVisible = ref(false) // 快照对话框
 const replayVisible = ref(false) // 复现对话框
 const incidentOptions = ref([]) // 事件选项
 const ruleOptions = ref([]) // 规则选项
+
+const decisionResultOptions = ref([]) // 规则选项
+const ruleStatusOptions = ref([]) // 规则选项
+const ruleLabelOptions = ref([]) // 规则选项
+
 const currentElement = ref({}) // 当前基本要素
 const currentRule = ref({}) // 当前命中规则
 const currentRuleList = ref([]) // 当前规则列表
@@ -352,7 +355,13 @@ const data = reactive({
     approvalRate: 0,
     rejectionRate: 0,
     dailyVolume: 0
-  } // 看板数据
+  }, // 看板数据
+  incidentOptions: [],
+  ruleOptions: [],
+  decisionResultOptions: [],
+  ruleStatusOptions: [],
+  ruleLabelOptions: [],
+
 })
 
 const { queryParams, dashboardData } = toRefs(data)
@@ -384,8 +393,8 @@ function getList() {
     startTime: startTime || '',
     endTime: endTime || ''
   }).then(response => {
-    engineList.value = response.rows || []
-    total.value = Number(response.total) || 0
+    engineList.value = response.data.list || []
+    total.value = Number(response.data.total) || 0
     loading.value = false
   }).catch(() => {
     loading.value = false
@@ -417,9 +426,17 @@ async function fetchOptions() {
     const dictDb = {
       dictKeyList: ["incident", "rule", "penaltyAction"]
     }
-    const response = await getDictOptions(dictDb)
-    incidentOptions.value = response.incident || []
-    ruleOptions.value = response.rule || []
+    const response = await getDictOptionsByDb(dictDb)
+    incidentOptions.value = response.data.incident || []
+    ruleOptions.value = response.data.rule || []
+
+    const dictOptions = {
+      dictKeyList: ["decisionResult", "ruleStatus", "ruleLabel"]
+    }
+    const result = await getDictOptions(dictOptions)
+    decisionResultOptions.value = result.data.decisionResult || []
+    ruleStatusOptions.value = result.data.ruleStatus || []
+    ruleLabelOptions.value = result.data.ruleLabel || []
   } catch (error) {
     proxy.$modal.msgError("加载字典失败")
   }
@@ -485,15 +502,15 @@ async function showSnapshot(row) {
 }
 
 // 复现
-async function replayIncident(row) {
-  try {
-    const response = await replayIncident({ riskFlowNo: row.riskFlowNo })
-    replayData.value = response.data || {}
-    replayVisible.value = true
-  } catch (error) {
-    proxy.$modal.msgError("复现失败")
-  }
-}
+// async function replayIncident(row) {
+//   try {
+//     const response = await replayIncident({ riskFlowNo: row.riskFlowNo })
+//     replayData.value = response.data || {}
+//     replayVisible.value = true
+//   } catch (error) {
+//     proxy.$modal.msgError("复现失败")
+//   }
+// }
 
 // 初始化
 getList()

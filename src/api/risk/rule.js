@@ -44,12 +44,3 @@ export function delRule(id) {
         params: {id}
     })
 }
-
-// 获取动态字典（事件、指标、处置方式）
-export function getDictOptions(data) {
-    return request({
-        url: '/dict/options/db',
-        method: 'get',
-        params: data
-    })
-}

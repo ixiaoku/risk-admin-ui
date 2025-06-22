@@ -373,6 +373,12 @@ const data = reactive({
 
 const { queryParams, dashboardData } = toRefs(data)
 
+onMounted(() => {
+  fetchOptions()
+  getList()
+  getDashboardData()
+})
+
 // 获取默认时间范围（最近7天）
 function getDefaultDateRange() {
   const now = new Date()
@@ -519,10 +525,6 @@ async function replay(row) {
   }
 }
 
-// 初始化
-getList()
-getDashboardData()
-fetchOptions()
 </script>
 
 <style scoped>

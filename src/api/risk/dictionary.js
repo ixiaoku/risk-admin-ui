@@ -4,8 +4,8 @@ import request from '@/utils/request'
 export function getDictOptionsByDb(data) {
     return request({
         url: '/dict/options/db',
-        method: 'get',
-        params: data
+        method: 'post',
+        data: data
     })
 }
 
@@ -13,7 +13,7 @@ export function getDictOptionsByDb(data) {
 export function getDictOptions(data) {
     return request({
         url: '/dict/options',
-        method: 'get',
-        params: data
+        method: 'post',
+        data: data
     })
 }

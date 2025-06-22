@@ -12,9 +12,9 @@
         >
           <el-option
               v-for="item in incidentOptions"
-              :key="item.code"
-              :label="item.msg"
-              :value="item.code"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
           />
         </el-select>
       </el-form-item>
@@ -44,7 +44,7 @@
             style="width: 240px"
         >
           <el-option
-              v-for="dict in rule_status"
+              v-for="dict in ruleStatusOptions"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -87,18 +87,18 @@
       <el-table-column prop="ruleName" label="规则名称" width="140" :show-overflow-tooltip="true"></el-table-column>
       <el-table-column prop="status" label="状态" width="80" align="center">
         <template #default="scope">
-          <dict-tag :options="rule_status" :value="scope.row.status" />
+          <dict-tag :options="ruleStatusOptions" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column prop="operator" label="操作人" width="100"></el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="160">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ scope.row.createTime }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="updateTime" label="操作时间" width="160">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.updateTime) }}</span>
+          <span>{{ scope.row.updateTime }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
@@ -131,7 +131,7 @@
     />
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog :title="title" v-model="open" width="60%" append-to-body>
+    <el-dialog :title="title" v-model="open" width="70%" append-to-body>
       <el-form ref="ruleRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -146,9 +146,9 @@
               >
                 <el-option
                     v-for="item in incidentOptions"
-                    :key="item.code"
-                    :label="item.msg"
-                    :value="item.code"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
                 />
               </el-select>
             </el-form-item>
@@ -167,7 +167,7 @@
             <el-form-item label="状态" prop="status">
               <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%">
                 <el-option
-                    v-for="dict in rule_status"
+                    v-for="dict in ruleStatusOptions"
                     :key="dict.value"
                     :label="dict.label"
                     :value="dict.value"
@@ -185,10 +185,10 @@
               <el-input v-model="form.expiryTime" placeholder="请输入过期时间" />
             </el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :span="28">
             <el-form-item label="指标" required>
               <div v-for="(metric, index) in form.metrics" :key="index" class="metric-row">
-                <el-row :gutter="10">
+                <el-row :gutter="28">
                   <el-col :span="1">
                     <span class="index-badge">{{ index + 1 }}</span>
                   </el-col>
@@ -206,9 +206,9 @@
                       >
                         <el-option
                             v-for="item in metricOptions"
-                            :key="item.code"
-                            :label="item.msg"
-                            :value="item.code"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
                         />
                       </el-select>
                     </el-form-item>
@@ -224,7 +224,7 @@
                           style="width: 100%"
                       >
                         <el-option
-                            v-for="dict in operation_symbol"
+                            v-for="dict in operationSymbolOptions"
                             :key="dict.value"
                             :label="dict.label"
                             :value="dict.value"
@@ -232,7 +232,7 @@
                       </el-select>
                     </el-form-item>
                   </el-col>
-                  <el-col :span="4">
+                  <el-col :span="5">
                     <el-form-item
                         :prop="'metrics.' + index + '.metricValueType'"
                         :rules="[{ required: true, message: '请选择指标值类型', trigger: 'change' }]"
@@ -271,9 +271,9 @@
                       >
                         <el-option
                             v-for="item in metricOptions"
-                            :key="item.code"
-                            :label="item.msg"
-                            :value="item.code"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
                         />
                       </el-select>
                     </el-form-item>
@@ -306,7 +306,7 @@
             <el-form-item label="决策结果" prop="decisionResult">
               <el-select v-model="form.decisionResult" placeholder="请选择决策结果" style="width: 100%">
                 <el-option
-                    v-for="dict in decision_result"
+                    v-for="dict in decisionResultOptions"
                     :key="dict.value"
                     :label="dict.label"
                     :value="dict.value"
@@ -318,7 +318,7 @@
             <el-form-item label="标签" prop="label">
               <el-select v-model="form.label" placeholder="请选择标签" style="width: 100%">
                 <el-option
-                    v-for="dict in rule_label"
+                    v-for="dict in ruleLabelOptions"
                     :key="dict.value"
                     :label="dict.label"
                     :value="dict.value"
@@ -331,9 +331,9 @@
               <el-select v-model="form.penaltyAction" placeholder="请选择处置方式" style="width: 100%">
                 <el-option
                     v-for="item in penaltyActionOptions"
-                    :key="item.code"
-                    :label="item.msg"
-                    :value="item.code"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
                 />
               </el-select>
             </el-form-item>
@@ -351,13 +351,12 @@
 </template>
 
 <script setup name="RuleManage">
-import { addRule, delRule, getRule, listRule, getDictOptions } from "@/api/risk/rule.js"
+import { addRule, delRule, getRule, listRule } from "@/api/risk/rule.js"
 import { getCurrentInstance, ref, reactive, toRefs } from "vue"
+import {getDictOptions, getDictOptionsByDb } from "@/api/risk/dictionary.js";
 
 // 获取当前实例
 const { proxy } = getCurrentInstance()
-// 加载字典数据
-const { rule_status, operation_symbol, metric_type, rule_label, decision_result } = proxy.useDict("rule_status", "operation_symbol", "metric_type", "rule_label", "decision_result")
 
 // 响应式数据
 const ruleList = ref([]) // 规则列表
@@ -374,6 +373,11 @@ const metricValueTypeOptions = ref([
   { value: "custom", label: "自定义" },
   { value: "metric", label: "指标" }
 ]) // 指标值类型选项
+const ruleStatusOptions = ref([])
+const operationSymbolOptions = ref([])
+const metricTypeOptions = ref([])
+const ruleLabelOptions = ref([])
+const decisionResultOptions = ref([])
 
 const data = reactive({
   queryParams: {
@@ -389,7 +393,7 @@ const data = reactive({
     incidentCode: undefined,
     ruleCode: undefined,
     ruleName: undefined,
-    status: "2",
+    status: undefined,
     score: 0,
     groovyScript: undefined,
     jsonScript: undefined,
@@ -410,10 +414,21 @@ const data = reactive({
     score: [{ required: true, message: "得分不能为空", trigger: "blur" }],
     responsiblePerson: [{ required: true, message: "负责人不能为空", trigger: "blur" }],
     logicScript: [{ required: true, message: "表达式不能为空", trigger: "blur" }]
-  } // 表单验证规则
+  }, // 表单验证规则
+  ruleStatusOptions: [],
+  operationSymbolOptions: [],
+  metricTypeOptions: [],
+  ruleLabelOptions: [],
+  decisionResultOptions: [],
+  metricOptions: [],
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+onMounted(() => {
+  fetchOptions()
+  getList()
+})
 
 // 查询规则列表
 function getList() {
@@ -431,13 +446,22 @@ function getList() {
 async function fetchOptions() {
   try {
     const dictDb = {
-      dictKeyList: ["metric", "incident", "penaltyAction"],
-      queryCode: ""
+      dictKeyList: ["incident", "penaltyAction"]
     }
-    const response = await getDictOptions(dictDb)
-    incidentOptions.value = response.incident || []
-    metricOptions.value = response.metric || []
-    penaltyActionOptions.value = response.penaltyAction || []
+    const response = await getDictOptionsByDb(dictDb)
+    incidentOptions.value = response.data.incident || []
+    penaltyActionOptions.value = response.data.penaltyAction || []
+
+    const dict = {
+      dictKeyList: ["ruleStatus", "operationSymbol", "metricType", "ruleLabel", "decisionResult"]
+    }
+    const dictResult = await getDictOptions(dict)
+    ruleStatusOptions.value = dictResult.data.ruleStatus || []
+    operationSymbolOptions.value = dictResult.data.operationSymbol || []
+    metricTypeOptions.value = dictResult.data.metricType || []
+    ruleLabelOptions.value = dictResult.data.ruleLabel || []
+    decisionResultOptions.value = dictResult.data.decisionResult || []
+
   } catch (error) {
     proxy.$modal.msgError("加载字典失败")
   }
@@ -448,10 +472,10 @@ async function fetchMetrics(incidentCode) {
   try {
     const dictDb = {
       dictKeyList: ["metric"],
-      queryCode: incidentCode || form.value.incidentCode
+      queryCode: incidentCode
     }
-    const response = await getDictOptions(dictDb)
-    metricOptions.value = response.metric || []
+    const response = await getDictOptionsByDb(dictDb)
+    metricOptions.value = response.data.metric || []
   } catch (error) {
     proxy.$modal.msgError("加载指标失败")
     metricOptions.value = []
@@ -487,7 +511,7 @@ function reset() {
     incidentCode: undefined,
     ruleCode: undefined,
     ruleName: undefined,
-    status: "2",
+    status: undefined,
     score: 0,
     groovyScript: undefined,
     jsonScript: undefined,
@@ -526,7 +550,7 @@ async function handleUpdate(row) {
     const response = await getRule(row.id)
     form.value = {
       ...response.data,
-      status: String(response.data.status), // 确保字典类型匹配
+      status: response.data.status, // 确保字典类型匹配
       metrics: response.data.jsonScript
           ? JSON.parse(response.data.jsonScript).map(item => ({
             metricCode: item.metricCode || "",
@@ -620,9 +644,6 @@ function submitForm() {
   })
 }
 
-// 初始化
-getList()
-fetchOptions()
 </script>
 
 <style scoped>

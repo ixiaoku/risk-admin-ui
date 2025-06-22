@@ -172,7 +172,7 @@
               link
               type="primary"
               icon="Refresh"
-              @click="replayIncident(scope.row)"
+              @click="replay(scope.row)"
               v-hasPermi="['system:engine:replay']"
           >复现</el-button>
         </template>
@@ -261,7 +261,7 @@
             <el-descriptions-item v-for="(value, key) in snapshotData.metric" :key="key" :label="key">
               {{ value }}
             </el-descriptions-item>
-          </el-descriptions>>
+          </el-descriptions>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -281,9 +281,8 @@
               :key="index"
               class="condition-row"
           >
-            <el-col :span="4" class="condition-index">条件 {{ index + 1 }}</el-col>
-            <el-col :span="20">
-              <span class="expr-label">表达式:</span>
+            <el-row :span="20">
+              <span class="expr-label">{{ index + 1 }} :</span>
               <code class="expr-code">{{ item.ruleScript }}</code>
               <el-tag
                   :type="item.resultFlag ? 'success' : 'danger'"
@@ -291,11 +290,18 @@
               >
                 {{ item.resultFlag ? 'True' : 'False' }}
               </el-tag>
-            </el-col>
+            </el-row>
           </el-row>
         </el-form-item>
         <el-form-item label="逻辑表达式">
           <code class="expr-code">{{ replayData.logicScript }}</code>
+        </el-form-item>
+        <el-form-item label="指标数据">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item v-for="(value, key) in replayData.metric" :key="key" :label="key">
+              {{ value }}
+            </el-descriptions-item>
+          </el-descriptions>
         </el-form-item>
         <el-form-item label="最终结果">
           <el-tag :type="replayData.resultFlag ? 'success' : 'danger'" size="medium">
@@ -503,15 +509,15 @@ async function showSnapshot(row) {
 }
 
 // 复现
-// async function replayIncident(row) {
-//   try {
-//     const response = await replayIncident({ riskFlowNo: row.riskFlowNo })
-//     replayData.value = response.data || {}
-//     replayVisible.value = true
-//   } catch (error) {
-//     proxy.$modal.msgError("复现失败")
-//   }
-// }
+async function replay(row) {
+  try {
+    const response = await replayIncident({ riskFlowNo: row.riskFlowNo })
+    replayData.value = response.data || {}
+    replayVisible.value = true
+  } catch (error) {
+    proxy.$modal.msgError("复现失败")
+  }
+}
 
 // 初始化
 getList()

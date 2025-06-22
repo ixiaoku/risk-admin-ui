@@ -14,7 +14,7 @@
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="状态" clearable style="width: 200px">
           <el-option
-              v-for="dict in libraryStatusDict"
+              v-for="dict in listLibraryStatusOptions"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -24,7 +24,7 @@
       <el-form-item label="名单库类别" prop="listCategory">
         <el-select v-model="queryParams.listCategory" placeholder="名单库类别" clearable style="width: 200px">
           <el-option
-              v-for="dict in libraryCategoryDict"
+              v-for="dict in listLibraryCategoryOptions"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -62,12 +62,12 @@
       <el-table-column prop="listLibraryName" label="名单库名称" :show-overflow-tooltip="true" width="200"></el-table-column>
       <el-table-column prop="listCategory" label="名单库类别" width="120">
         <template #default="scope">
-          <dict-tag :options="libraryCategoryDict" :value="scope.row.listCategory" />
+          <dict-tag :options="listLibraryCategoryOptions" :value="scope.row.listCategory" />
         </template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="100">
         <template #default="scope">
-          <dict-tag :options="libraryStatusDict" :value="scope.row.status" />
+          <dict-tag :options="listLibraryStatusOptions" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column prop="operator" label="操作人" width="120"></el-table-column>
@@ -108,7 +108,7 @@
             <el-form-item label="名单库类别" prop="listCategory">
               <el-select v-model="form.listCategory" placeholder="请选择名单库类别">
                 <el-option
-                    v-for="dict in libraryCategoryDict"
+                    v-for="dict in listLibraryCategoryOptions"
                     :key="dict.value"
                     :label="dict.label"
                     :value="dict.value"
@@ -120,7 +120,7 @@
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
                 <el-radio
-                    v-for="dict in libraryStatusDict"
+                    v-for="dict in listLibraryStatusOptions"
                     :key="dict.value"
                     :value="dict.value"
                 >{{ dict.label }}</el-radio>
@@ -149,7 +149,7 @@ import { addListLibrary, delListLibrary, detail, listListLibrary, updateListLibr
 import { getCurrentInstance, ref, reactive, toRefs } from "vue"
 import CustomButton from '@/components/CustomButton.vue'
 import '@/assets/styles/table.scss'
-
+import {getDictOptions} from "@/api/risk/dictionary.js";
 
 // 获取当前实例
 const { proxy } = getCurrentInstance()
@@ -174,18 +174,32 @@ const data = reactive({
   rules: {
     listLibraryCode: [{ required: true, message: "名单库编码不能为空", trigger: "blur" }],
     listLibraryName: [{ required: true, message: "名单库名称不能为空", trigger: "blur" }],
-    //listCategory: [{ required: true, message: "名单库类别不能为空", trigger: "change" }],
+    listCategory: [{ required: true, message: "名单库类别不能为空", trigger: "change" }],
     status: [{ required: true, message: "状态不能为空", trigger: "change" }]
   }, // 表单验证规则
-  libraryStatusDict: [], // 状态字典
-  libraryCategoryDict: [], // 名单库类别字典
+  listLibraryCategoryOptions: [], // 状态字典
+  listLibraryStatusOptions: [], // 名单库类别字典
 })
 
-const { queryParams, form, rules, libraryCategoryDict, libraryStatusDict } = toRefs(data)
+const { queryParams, form, rules, listLibraryStatusOptions, listLibraryCategoryOptions } = toRefs(data)
 
 onMounted(() => {
-  getDict()   // 初始化名单类别字典
+  fetchOptions()
 })
+
+// 获取字典数据
+async function fetchOptions() {
+  try {
+    const dictOptions = {
+      dictKeyList: ["listLibraryStatus", "listLibraryCategory"]
+    }
+    const result = await getDictOptions(dictOptions)
+    listLibraryStatusOptions.value = result.data.listLibraryStatus || []
+    listLibraryCategoryOptions.value = result.data.listLibraryCategory || []
+  } catch (error) {
+    proxy.$modal.msgError("加载字典失败")
+  }
+}
 
 // 查询名单库列表
 function getList() {
@@ -222,18 +236,6 @@ function cancel() {
 function handleQuery() {
   queryParams.value.pageNum = 1
   getList()
-}
-
-function getDict() {
-  data.libraryCategoryDict = [
-    { value: 1, label: "黑名单" },
-    { value: 2, label: "白名单" },
-    { value: 3, label: "灰名单" },
-  ]
-  data.libraryStatusDict = [
-    { value: 0, label: "启用" },
-    { value: 1, label: "禁用" }
-  ]
 }
 
 // 重置搜索

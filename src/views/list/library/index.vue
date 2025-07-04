@@ -21,8 +21,8 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="名单库类别" prop="listCategory">
-        <el-select v-model="queryParams.listCategory" placeholder="名单库类别" clearable style="width: 200px">
+      <el-form-item label="名单库类别" prop="category">
+        <el-select v-model="queryParams.category" placeholder="名单库类别" clearable style="width: 200px">
           <el-option
               v-for="dict in listLibraryCategoryOptions"
               :key="dict.value"
@@ -60,9 +60,9 @@
     >
       <el-table-column prop="listLibraryCode" label="名单库编码" :show-overflow-tooltip="true" width="150"></el-table-column>
       <el-table-column prop="listLibraryName" label="名单库名称" :show-overflow-tooltip="true" width="200"></el-table-column>
-      <el-table-column prop="listCategory" label="名单库类别" width="120">
+      <el-table-column prop="category" label="名单库类别" width="120">
         <template #default="scope">
-          <dict-tag :options="listLibraryCategoryOptions" :value="scope.row.listCategory" />
+          <dict-tag :options="listLibraryCategoryOptions" :value="scope.row.category" />
         </template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="100">
@@ -105,8 +105,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="名单库类别" prop="listCategory">
-              <el-select v-model="form.listCategory" placeholder="请选择名单库类别">
+            <el-form-item label="名单库类别" prop="category">
+              <el-select v-model="form.category" placeholder="请选择名单库类别">
                 <el-option
                     v-for="dict in listLibraryCategoryOptions"
                     :key="dict.value"
@@ -128,8 +128,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="描述" prop="listLibraryDesc">
-              <el-input v-model="form.listLibraryDesc" type="textarea" placeholder="请输入名单库描述" />
+            <el-form-item label="描述" prop="remark">
+              <el-input v-model="form.remark" type="textarea" placeholder="请输入名单库描述" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -167,14 +167,14 @@ const data = reactive({
   queryParams: {
     listLibraryName: undefined,
     status: undefined,
-    listCategory: undefined,
+    category: undefined,
     pageNum: 1,
     pageSize: 10
   }, // 查询参数
   rules: {
     listLibraryCode: [{ required: true, message: "名单库编码不能为空", trigger: "blur" }],
     listLibraryName: [{ required: true, message: "名单库名称不能为空", trigger: "blur" }],
-    listCategory: [{ required: true, message: "名单库类别不能为空", trigger: "change" }],
+    category: [{ required: true, message: "名单库类别不能为空", trigger: "change" }],
     status: [{ required: true, message: "状态不能为空", trigger: "change" }]
   }, // 表单验证规则
   listLibraryCategoryOptions: [], // 状态字典
@@ -219,9 +219,9 @@ function reset() {
     id: undefined,
     listLibraryCode: undefined,
     listLibraryName: undefined,
-    listCategory: undefined,
-    status: "0",
-    listLibraryDesc: undefined
+    category: undefined,
+    status: undefined,
+    remark: undefined
   }
   proxy.resetForm("listLibraryRef")
 }
@@ -243,7 +243,7 @@ function resetQuery() {
   proxy.resetForm("queryRef")
   queryParams.value.pageNum = 1
   queryParams.value.status = undefined
-  queryParams.value.listCategory = undefined
+  queryParams.value.category = undefined
   queryParams.value.listLibraryName = undefined
   handleQuery()
 }
@@ -261,8 +261,8 @@ function handleUpdate(row) {
   detail(row.id).then(response => {
     form.value = {
       ...response.data,
-      status: String(response.data.status), // 确保状态为字符串
-      listCategory: String(response.data.listCategory) // 确保类别为字符串
+      status: response.data.status, // 确保状态为字符串
+      category: response.data.category // 确保类别为字符串
     }
     open.value = true
     title.value = "修改名单库"
@@ -298,9 +298,4 @@ getList()
 </script>
 
 <style scoped>
-/* 分页样式 */
-.pagination {
-  margin-top: 10px;
-  text-align: right;
-}
 </style>

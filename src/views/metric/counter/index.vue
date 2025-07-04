@@ -11,9 +11,9 @@
         >
           <el-option
               v-for="item in incidentOptions"
-              :key="item.code"
-              :label="item.msg"
-              :value="item.code"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
           />
         </el-select>
       </el-form-item>
@@ -70,11 +70,19 @@
       <el-table-column prop="metricName" label="指标名称" width="180" :show-overflow-tooltip="true" />
       <el-table-column prop="incidentCode" label="事件编码" width="180" :show-overflow-tooltip="true" />
       <el-table-column prop="attributeKey" label="分组条件指标Key" width="180" :show-overflow-tooltip="true" />
-      <el-table-column prop="windowSize" label="时间窗口" width="140" :show-overflow-tooltip="true" />
-      <el-table-column prop="aggregationType" label="聚合方式" width="140" :show-overflow-tooltip="true" />
+      <el-table-column prop="windowSize" label="时间窗口" width="80">
+        <template #default="scope">
+          <dict-tag :options="windowSizeOptions" :value="scope.row.windowSize" />
+        </template>
+      </el-table-column>
+      <el-table-column prop="aggregationType" label="聚合方式" width="80">
+        <template #default="scope">
+          <dict-tag :options="aggregationTypeOptions" :value="scope.row.aggregationType" />
+        </template>
+      </el-table-column>
       <el-table-column prop="status" label="状态" width="100" align="center">
         <template #default="scope">
-          <dict-tag :options="metric_status" :value="scope.row.status" />
+          <dict-tag :options="counterStatusOptions" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column prop="windowType" label="窗口类型" width="80" :show-overflow-tooltip="true" />
@@ -82,12 +90,12 @@
       <el-table-column prop="operator" label="操作人" width="80" :show-overflow-tooltip="true" />
       <el-table-column prop="createTime" label="创建时间" width="160">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ scope.row.createTime }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="updateTime" label="更新时间" width="160">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.updateTime) }}</span>
+          <span>{{ scope.row.updateTime }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right" class-name="small-padding fixed-width">
@@ -188,7 +196,7 @@
             <el-form-item label="指标类型" prop="metricType">
               <el-select v-model="form.metricType" placeholder="请选择指标类型" style="width: 100%">
                 <el-option
-                    v-for="dict in counter_metric_type"
+                    v-for="dict in counterMetricTypeOptions"
                     :key="dict.value"
                     :label="dict.label"
                     :value="dict.value"
@@ -200,7 +208,7 @@
             <el-form-item label="时间窗口" prop="windowSize">
               <el-select v-model="form.windowSize" placeholder="请选择时间窗口" style="width: 100%">
                 <el-option
-                    v-for="dict in window_size"
+                    v-for="dict in windowSizeOptions"
                     :key="dict.value"
                     :label="dict.label"
                     :value="dict.value"
@@ -222,7 +230,7 @@
             <el-form-item label="聚合方式" prop="aggregationType">
               <el-select v-model="form.aggregationType" placeholder="请选择聚合方式" style="width: 100%">
                 <el-option
-                    v-for="dict in aggregation_type"
+                    v-for="dict in aggregationTypeOptions"
                     :key="dict.value"
                     :label="dict.label"
                     :value="dict.value"
@@ -233,7 +241,11 @@
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
-                <el-radio v-for="dict in metric_status" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio>
+                <el-radio
+                    v-for="dict in counterStatusOptions"
+                    :key="dict.value"
+                    :label="dict.value">{{ dict.label }}
+                </el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -261,13 +273,12 @@
 </template>
 
 <script setup name="MetricManage">
-import { addMetric, delMetric, getMetric, listMetric, getDictOptions } from "@/api/risk/counter.js"
+import { addMetric, delMetric, getMetric, listMetric, updateMetric } from "@/api/risk/counter.js"
 import { getCurrentInstance, ref, reactive, toRefs } from "vue"
+import {getDictOptions, getDictOptionsByDb} from "@/api/risk/dictionary.js";
 
 // 获取当前实例
 const { proxy } = getCurrentInstance()
-// 加载字典数据
-const { counter_metric_type, window_size, aggregation_type, metric_status } = proxy.useDict("counter_metric_type", "window_size", "aggregation_type", "metric_status")
 
 // 响应式数据
 const metricList = ref([]) // 指标列表
@@ -276,8 +287,7 @@ const loading = ref(true) // 表格加载
 const showSearch = ref(true) // 搜索表单显示
 const title = ref("") // 对话框标题
 const total = ref(0) // 总记录数
-const incidentOptions = ref([]) // 事件选项
-const attributeKeyOptions = ref([]) // 属性指标选项
+
 
 const data = reactive({
   queryParams: {
@@ -313,10 +323,21 @@ const data = reactive({
     windowSize: [{ required: true, message: "时间窗口不能为空", trigger: "change" }],
     aggregationType: [{ required: true, message: "聚合方式不能为空", trigger: "change" }],
     status: [{ required: true, message: "状态不能为空", trigger: "change" }]
-  } // 表单验证规则
+  }, // 表单验证规则
+  counterMetricTypeOptions: [], 
+  windowSizeOptions: [], 
+  aggregationTypeOptions: [], 
+  counterStatusOptions: [],
+  attributeKeyOptions: [],
 })
 
 const { queryParams, form, rules } = toRefs(data)
+const incidentOptions = ref([]) // 事件选项
+const counterMetricTypeOptions = ref([]) // 属性指标选项
+const windowSizeOptions = ref([]) // 窗口类型
+const aggregationTypeOptions = ref([]) // 聚合类型
+const counterStatusOptions = ref([]) // 计数器状态
+const attributeKeyOptions = ref([]) // 属性指标选项
 
 // 查询指标列表
 function getList() {
@@ -337,9 +358,19 @@ async function fetchOptions() {
       dictKeyList: ["incident", "metric"],
       queryCode: ""
     }
-    const response = await getDictOptions(dictDb)
-    incidentOptions.value = response.incident || []
-    attributeKeyOptions.value = response.metric || []
+    const response = await getDictOptionsByDb(dictDb)
+    incidentOptions.value = response.data.incident || []
+
+    const dict = {
+      dictKeyList: ["counterMetricType", "windowSize" ,"aggregationType", "counterStatus"],
+      queryCode: ""
+    }
+    const dictResult = await getDictOptions(dict)
+    counterMetricTypeOptions.value = dictResult.data.counterMetricType || []
+    windowSizeOptions.value = dictResult.data.windowSize || []
+    aggregationTypeOptions.value = dictResult.data.aggregationType || []
+    counterStatusOptions.value = dictResult.data.counterStatus || []
+
   } catch (error) {
     proxy.$modal.msgError("加载字典失败")
   }
@@ -356,8 +387,8 @@ async function fetchAttributes(incidentCode) {
       dictKeyList: ["metric"],
       queryCode: incidentCode
     }
-    const response = await getDictOptions(dictDb)
-    attributeKeyOptions.value = response.metric || []
+    const response = await getDictOptionsByDb(dictDb)
+    attributeKeyOptions.value = response.data.metric || []
   } catch (error) {
     proxy.$modal.msgError("加载属性指标失败")
     attributeKeyOptions.value = []
